@@ -92,37 +92,58 @@ docker-compose up -d
 
 ## ERD
 
-```
-┌─────────────────┐       ┌──────────────────┐       ┌─────────────────┐
-│   employees     │       │  employee_roles  │       │     roles       │
-├─────────────────┤       ├──────────────────┤       ├─────────────────┤
-│ id (PK)         │──────<│ employee_id (FK) │>──────│ id (PK)         │
-│ username        │       │ role_id (FK)     │       │ name            │
-│ password        │       │ created_at       │       │ description     │
-│ name            │       └──────────────────┘       │ is_active       │
-│ email           │                                   │ created_at      │
-│ is_active       │                                   └────────┬────────┘
-│ created_at      │                                            │
-│ updated_at      │                                   ┌────────▼────────┐
-└─────────────────┘                                   │   role_menus    │
-                                                       ├─────────────────┤
-                                                       │ role_id (FK)    │
-                                                       │ menu_id (FK)    │
-                                                       │ created_at      │
-                                                       └────────┬────────┘
-                                                                │
-                                                       ┌────────▼────────┐
-                                                       │     menus       │
-                                                       ├─────────────────┤
-                                                       │ id (PK)         │
-                                                       │ name            │
-                                                       │ path            │
-                                                       │ parent_id (FK)◄─┤
-                                                       │ order (splice)  │
-                                                       │ is_active       │
-                                                       │ created_at      │
-                                                       └─────────────────┘
-                                                         (self-referential)
+```mermaid
+erDiagram
+    employees {
+        uuid id PK
+        string username UK
+        string password
+        string name
+        string email UK
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    roles {
+        uuid id PK
+        string name UK
+        string description
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    employee_roles {
+        uuid id PK
+        uuid employee_id FK
+        uuid role_id FK
+        timestamp created_at
+    }
+
+    menus {
+        uuid id PK
+        string name
+        string path
+        uuid parent_id FK
+        int order
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    role_menus {
+        uuid id PK
+        uuid role_id FK
+        uuid menu_id FK
+        timestamp created_at
+    }
+
+    employees ||--o{ employee_roles : "has"
+    roles ||--o{ employee_roles : "assigned to"
+    roles ||--o{ role_menus : "has"
+    menus ||--o{ role_menus : "assigned to"
+    menus ||--o{ menus : "parent_id (self-ref)"
 ```
 
 **Relationships:**
@@ -141,53 +162,48 @@ docker-compose up -d
 
 ### Single Role Login
 
-```
-Client                          Server
-  │                               │
-  │── POST /api/auth/login ───────►│
-  │   { username, password }       │  1. Verify credentials (bcrypt)
-  │                               │  2. Check roles → only 1 role
-  │◄── { access_token,  ──────────│  3. Issue access + refresh token
-  │      refresh_token,            │     payload: { employee_id, role_id }
-  │      active_role }             │
-  │                               │
-  │── GET /api/me/menus ──────────►│  4. Fetch menu tree filtered by role
-  │   Authorization: Bearer <token>│
-  │◄── { menu tree } ─────────────│
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+
+    C->>S: POST /api/auth/login { username, password }
+    S->>S: 1. Verify password (bcrypt)
+    S->>S: 2. Check roles → only 1 role
+    S-->>C: { access_token, refresh_token, active_role }
+    C->>S: GET /api/me/menus (Bearer access_token)
+    S-->>C: { menu tree filtered by role }
 ```
 
 ### Multi-Role Login
 
-```
-Client                          Server
-  │                               │
-  │── POST /api/auth/login ───────►│
-  │   { username, password }       │  1. Verify credentials
-  │                               │  2. Check roles → multiple roles found
-  │◄── { temp_token,  ────────────│  3. Issue temp token (5 min TTL)
-  │      requires_role_selection,  │     payload: { employee_id,
-  │      roles: [...] }            │              requires_role_selection: true }
-  │                               │
-  │  (user selects a role)         │
-  │                               │
-  │── POST /api/auth/select-role ─►│
-  │   Authorization: Bearer <temp> │  4. Validate temp token
-  │   { role_id }                  │  5. Verify employee owns that role
-  │                               │
-  │◄── { access_token,  ──────────│  6. Issue full token with selected role
-  │      refresh_token,            │
-  │      active_role }             │
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+
+    C->>S: POST /api/auth/login { username, password }
+    S->>S: 1. Verify password (bcrypt)
+    S->>S: 2. Check roles → multiple roles found
+    S-->>C: { temp_token (5min), requires_role_selection, roles[] }
+    C->>C: User selects a role
+    C->>S: POST /api/auth/select-role { role_id } (Bearer temp_token)
+    S->>S: 3. Validate temp token
+    S->>S: 4. Verify employee owns that role
+    S-->>C: { access_token, refresh_token, active_role }
 ```
 
 ### Token Refresh
 
-```
-Client                          Server
-  │                               │
-  │── POST /api/auth/refresh ─────►│
-  │   { refresh_token }            │  1. Verify refresh token signature
-  │                               │  2. Lookup employee + role
-  │◄── { access_token (new) } ────│  3. Issue new access token
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+
+    C->>S: POST /api/auth/refresh { refresh_token }
+    S->>S: 1. Verify refresh token signature
+    S->>S: 2. Lookup employee + role
+    S-->>C: { access_token (new) }
 ```
 
 ---
