@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nuha_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nuha_db
+      POSTGRES_USER: nuha_user
+      POSTGRES_PASSWORD: nuha_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nuha_user -d nuha_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: nuha_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://nuha_user:nuha_pass@postgres:5432/nuha_db
+      JWT_SECRET: super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: super-refresh-secret-change-in-production
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_TEMP_EXPIRES_IN: 5m
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    command: >
+      sh -c "npx prisma migrate deploy && node prisma/seed.js && node src/server.js"
+
+volumes:
+  postgres_data:
