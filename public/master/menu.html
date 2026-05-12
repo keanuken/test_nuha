@@ -83,10 +83,6 @@
         <input id="fPath" type="text" placeholder="/contoh/path" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-        <input id="fIcon" type="text" placeholder="dashboard, users, settings..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      </div>
-      <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Parent Menu</label>
         <select id="fParent" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">— Root (tidak ada parent) —</option>
@@ -94,7 +90,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
-        <input id="fOrder" type="number" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input id="fOrder" type="number" value="1" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div class="flex gap-3 pt-2">
         <button type="button" onclick="closeModal('modal')" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Batal</button>
@@ -107,6 +103,7 @@
 <script src="/app.js"></script>
 <script>
   if (!requireAuth()) throw '';
+  if (!requireRole('Super Admin', 'Manager', 'Staff')) throw '';
   const emp = getEmployee(); const role = getActiveRole();
   document.getElementById('sidebarName').textContent = emp.name || '';
   document.getElementById('sidebarRole').textContent = role.name || '';
@@ -159,21 +156,28 @@
     function buildTree(items, parentId = null, level = 0) {
       const children = items.filter(m => m.parentId === parentId).sort((a,b) => a.order - b.order);
       if (!children.length) return '';
-      return children.map(m => `
-        <div style="padding-left:${level*20}px">
-          <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 group">
-            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${items.some(x => x.parentId === m.id) ? 'M3 7h18M3 12h18M3 17h18' : 'M9 5l7 7-7 7'}"/>
-            </svg>
-            <span class="text-sm font-medium text-gray-700">${m.name}</span>
-            ${m.path ? `<span class="text-xs text-gray-400 font-mono">${m.path}</span>` : ''}
+      return children.map((m, idx, arr) => {
+        const isLast = idx === arr.length - 1;
+        const hasChildren = items.some(x => x.parentId === m.id);
+        // bullet: ● root, ○ level1, – level2+
+        const bullets = ['●', '○', '–', '·'];
+        const bullet = bullets[level] || '·';
+        const indent = level * 20;
+        return `
+        <div>
+          <div class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-gray-50 group" style="padding-left:${8 + indent}px">
+            <span class="text-gray-${level === 0 ? '700' : '400'} text-xs select-none w-3 text-center flex-shrink-0">${bullet}</span>
+            <span class="text-sm ${level === 0 ? 'font-semibold text-gray-800' : 'font-medium text-gray-600'} ${hasChildren ? '' : ''}"
+            >${m.name}</span>
+            ${m.path ? `<span class="text-xs text-gray-300 font-mono">${m.path}</span>` : '<span class="text-xs text-gray-300 italic">no path</span>'}
             <div class="ml-auto hidden group-hover:flex gap-2">
               <button onclick="openEdit('${m.id}')" class="text-xs text-blue-600 hover:underline">Edit</button>
               <button onclick="deleteMenu('${m.id}')" class="text-xs text-red-500 hover:underline">Hapus</button>
             </div>
           </div>
           ${buildTree(items, m.id, level + 1)}
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
     el.innerHTML = buildTree(allMenus) || '<p class="text-gray-400 text-sm">Tidak ada menu</p>';
   }
@@ -196,8 +200,8 @@
   function openCreate() {
     document.getElementById('editId').value = '';
     document.getElementById('modalTitle').textContent = 'Tambah Menu';
-    ['fName','fPath','fIcon'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fOrder').value = '0';
+    ['fName','fPath'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fOrder').value = '1';
     populateParentSelect();
     showModal('modal');
   }
@@ -208,7 +212,6 @@
     document.getElementById('modalTitle').textContent = 'Edit Menu';
     document.getElementById('fName').value = m.name;
     document.getElementById('fPath').value = m.path || '';
-    document.getElementById('fIcon').value = m.icon || '';
     document.getElementById('fOrder').value = m.order;
     populateParentSelect(id);
     document.getElementById('fParent').value = m.parentId || '';
@@ -221,7 +224,6 @@
     const body = {
       name: document.getElementById('fName').value.trim(),
       path: document.getElementById('fPath').value.trim() || null,
-      icon: document.getElementById('fIcon').value.trim() || null,
       parentId: document.getElementById('fParent').value || null,
       order: parseInt(document.getElementById('fOrder').value) || 0,
     };

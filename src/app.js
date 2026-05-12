@@ -60,8 +60,21 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // 404 API routes
 app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' }));
 
+// Page routes
+const path = require('path');
+const publicDir = path.join(__dirname, '..', 'public');
+const pages = {
+  '/dashboard':        'dashboard.html',
+  '/master/karyawan':  'master/karyawan.html',
+  '/master/role':      'master/role.html',
+  '/master/menu':      'master/menu.html',
+};
+Object.entries(pages).forEach(([route, file]) => {
+  app.get(route, (req, res) => res.sendFile(file, { root: publicDir }));
+});
+
 // SPA fallback — semua non-API route ke index.html
-app.use((req, res) => res.sendFile('index.html', { root: require('path').join(__dirname, '..', 'public') }));
+app.use((req, res) => res.sendFile('index.html', { root: publicDir }));
 
 // Error handler
 app.use(errorHandler);

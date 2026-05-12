@@ -61,11 +61,7 @@
         <div class="bg-white rounded-xl border border-gray-200 p-5">
           <h2 class="font-semibold text-gray-800 mb-1">Selamat Datang 👋</h2>
           <p class="text-sm text-gray-500 mb-4">Anda login sebagai <span class="font-medium text-blue-600" id="welcomeName"></span> dengan role <span class="font-medium text-green-600" id="welcomeRole"></span>.</p>
-          <div class="space-y-2 text-sm">
-            <a href="/master/karyawan.html" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>Manajemen Karyawan</a>
-            <a href="/master/role.html" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>Manajemen Role</a>
-            <a href="/master/menu.html" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>Manajemen Menu</a>
-          </div>
+          <div class="space-y-2 text-sm" id="quickLinks"></div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
           <h2 class="font-semibold text-gray-800 mb-3">Menu Saya</h2>
@@ -92,6 +88,22 @@
   document.getElementById('welcomeRole').textContent  = role.name || '';
 
   renderSidebar('/dashboard');
+
+  // Quick links — conditional by role
+  (function renderQuickLinks() {
+    const roleName = role.name;
+    const links = [
+      { href: '/master/karyawan', label: 'Manajemen Karyawan', roles: ['Super Admin', 'Manager'] },
+      { href: '/master/role',     label: 'Manajemen Role',     roles: ['Super Admin'] },
+      { href: '/master/menu',     label: 'Manajemen Menu',     roles: ['Super Admin', 'Manager', 'Staff'] },
+    ];
+    const icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
+    const el = document.getElementById('quickLinks');
+    el.innerHTML = links
+      .filter(l => l.roles.includes(roleName))
+      .map(l => `<a href="${l.href}" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition">${icon}${l.label}</a>`)
+      .join('');
+  })();
 
   async function loadStats() {
     const [employees, roles, menus] = await Promise.all([

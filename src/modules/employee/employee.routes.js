@@ -1,14 +1,14 @@
 const router = require('express').Router();
 const ctrl = require('./employee.controller');
-const { authenticate } = require('../../middleware/auth');
+const { authenticate, roleGuard } = require('../../middleware/auth');
 
 router.use(authenticate);
-router.get('/', ctrl.getAll);
-router.post('/', ctrl.create);
-router.put('/:id', ctrl.update);
-router.delete('/:id', ctrl.remove);
-router.get('/:id/roles', ctrl.getRoles);
-router.post('/:id/roles', ctrl.assignRole);
-router.delete('/:id/roles/:roleId', ctrl.revokeRole);
+router.get('/', roleGuard('Super Admin', 'Manager'), ctrl.getAll);
+router.post('/', roleGuard('Super Admin', 'Manager'), ctrl.create);
+router.put('/:id', roleGuard('Super Admin', 'Manager'), ctrl.update);
+router.delete('/:id', roleGuard('Super Admin', 'Manager'), ctrl.remove);
+router.get('/:id/roles', roleGuard('Super Admin', 'Manager'), ctrl.getRoles);
+router.post('/:id/roles', roleGuard('Super Admin', 'Manager'), ctrl.assignRole);
+router.delete('/:id/roles/:roleId', roleGuard('Super Admin', 'Manager'), ctrl.revokeRole);
 
 module.exports = router;

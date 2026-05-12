@@ -90,6 +90,7 @@
 <script src="/app.js"></script>
 <script>
   if (!requireAuth()) throw '';
+  if (!requireRole('Super Admin')) throw '';
   const emp = getEmployee(); const role = getActiveRole();
   document.getElementById('sidebarName').textContent = emp.name || '';
   document.getElementById('sidebarRole').textContent = role.name || '';

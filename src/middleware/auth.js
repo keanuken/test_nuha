@@ -41,4 +41,19 @@ const authenticateTemp = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, authenticateTemp };
+/**
+ * roleGuard(...allowedRoleNames)
+ * Harus dipasang setelah authenticate.
+ * Contoh: router.use(authenticate, roleGuard('Super Admin', 'Manager'))
+ */
+const roleGuard = (...allowedRoles) => async (req, res, next) => {
+  const prisma = require('../config/database');
+  const role = await prisma.role.findUnique({ where: { id: req.user.role_id }, select: { name: true } });
+  if (!role || !allowedRoles.includes(role.name)) {
+    return error(res, 'Forbidden: akses ditolak untuk role ini', 403);
+  }
+  req.roleName = role.name;
+  next();
+};
+
+module.exports = { authenticate, authenticateTemp, roleGuard };

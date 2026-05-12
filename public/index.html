@@ -120,9 +120,11 @@
           tempToken = data.temp_token;
           showRoleModal(data.roles);
         } else {
-          // Single role: langsung ke dashboard
+          // Single role: langsung ke dashboard (atau halaman yang dituju)
           saveSession(data);
-          window.location.href = '/dashboard.html';
+          const redirect = sessionStorage.getItem('redirect_after_login') || '/dashboard.html';
+          sessionStorage.removeItem('redirect_after_login');
+          window.location.href = redirect;
         }
       } catch (err) {
         showAlert('Tidak dapat terhubung ke server');
@@ -155,7 +157,9 @@
         const json = await res.json();
         if (!res.ok) return showAlert(json.message || 'Gagal memilih role');
         saveSession(json.data);
-        window.location.href = '/dashboard.html';
+        const redirect = sessionStorage.getItem('redirect_after_login') || '/dashboard.html';
+        sessionStorage.removeItem('redirect_after_login');
+        window.location.href = redirect;
       } catch {
         showAlert('Gagal memilih role');
       }

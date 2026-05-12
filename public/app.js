@@ -61,7 +61,40 @@ function logout() {
 }
 
 function requireAuth() {
-  if (!isLoggedIn()) { window.location.href = '/'; return false; }
+  if (!isLoggedIn()) {
+    sessionStorage.setItem('redirect_after_login', window.location.pathname);
+    window.location.href = '/';
+    return false;
+  }
+  return true;
+}
+
+// Cek apakah role aktif ada di daftar allowedRoles.
+// Kalau tidak, tampilkan modal peringatan lalu redirect ke dashboard.
+function requireRole(...allowedRoles) {
+  const role = getActiveRole();
+  if (!allowedRoles.includes(role.name)) {
+    // Buat modal peringatan
+    const el = document.createElement('div');
+    el.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    el.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+        <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Akses Ditolak</h3>
+        <p class="text-sm text-gray-500 mb-5">Anda tidak diizinkan masuk ke halaman ini.</p>
+        <button id="_guardBtn" class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+          Kembali ke Dashboard
+        </button>
+      </div>`;
+    document.body.appendChild(el);
+    document.getElementById('_guardBtn').onclick = () => { window.location.href = '/dashboard'; };
+    return false;
+  }
   return true;
 }
 
@@ -118,34 +151,30 @@ async function renderSidebar(activeMenu = '') {
   const container = document.getElementById('sidebarMenus');
   if (!container) return;
   container.innerHTML = '';
-  renderMenuItems(res.data.data, container, activeMenu, 0);
+  renderMenuItems(res.data.data, container, activeMenu, 0, '');
 }
 
-function renderMenuItems(menus, container, activeMenu, level) {
-  menus.forEach(m => {
+function renderMenuItems(menus, container, activeMenu, level, prefix) {
+  menus.forEach((m, idx) => {
     const isActive = activeMenu === m.path;
     const hasChildren = m.children && m.children.length > 0;
-    const indent = level * 12;
+    const number = prefix ? `${prefix}.${idx + 1}` : `${idx + 1}`;
 
     const item = document.createElement('div');
     item.innerHTML = `
       <a href="${m.path || '#'}"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer
+        class="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer
           ${isActive ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}"
-        style="padding-left: ${12 + indent}px">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="${hasChildren ? 'M3 7h18M3 12h18M3 17h18' : 'M9 5l7 7-7 7'}"/>
-        </svg>
+        style="padding-left: ${12 + level * 16}px">
+        <span class="mr-2 ${isActive ? 'text-blue-200' : 'text-gray-400'} font-mono text-xs select-none flex-shrink-0">${number}</span>
         <span>${m.name}</span>
       </a>`;
     container.appendChild(item);
 
     if (hasChildren) {
       const sub = document.createElement('div');
-      sub.className = 'ml-2';
       container.appendChild(sub);
-      renderMenuItems(m.children, sub, activeMenu, level + 1);
+      renderMenuItems(m.children, sub, activeMenu, level + 1, number);
     }
   });
 }
