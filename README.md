@@ -143,7 +143,6 @@ erDiagram
     roles ||--o{ employee_roles : "assigned to"
     roles ||--o{ role_menus : "has"
     menus ||--o{ role_menus : "assigned to"
-    <!-- menus ||--o{ menus : "parent_id (self-ref)" -->
 ```
 
 **Relationships:**
