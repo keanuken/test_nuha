@@ -76,7 +76,7 @@
   </div>
 
   <script>
-    const API = 'http://localhost:3000/api';
+    const API = window.location.origin + '/api';
     let tempToken = null;
 
     function showAlert(msg, type = 'error') {

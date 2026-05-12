@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu — Nuha</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+    <div class="p-5 border-b border-gray-200 flex items-center gap-3">
+      <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </div>
+      <div><p class="font-bold text-gray-800 text-sm">nuha.care</p><p class="text-xs text-gray-500" id="sidebarRole"></p></div>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-3" id="sidebarMenus"></nav>
+    <div class="p-4 border-t border-gray-200 flex items-center gap-3">
+      <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm" id="sidebarAvatar">?</div>
+      <div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-800 truncate" id="sidebarName"></p></div>
+      <button onclick="logout()" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <h1 class="text-lg font-semibold text-gray-800">Manajemen Menu</h1>
+      <div class="flex gap-2">
+        <button onclick="toggleView()" id="viewBtn" class="px-3 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition">🌳 Tree View</button>
+        <button onclick="openCreate()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Tambah Menu
+        </button>
+      </div>
+    </header>
+    <div class="flex-1 overflow-y-auto p-6">
+
+      <!-- Flat Table View -->
+      <div id="tableView" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Nama</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Path</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Parent</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Order</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+              <th class="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="6" class="text-center py-10 text-gray-400">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tree View -->
+      <div id="treeView" class="hidden bg-white rounded-xl border border-gray-200 p-5">
+        <div id="treeContent" class="space-y-1"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create/Edit -->
+<div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-5" id="modalTitle">Tambah Menu</h2>
+    <form id="modalForm" class="space-y-4">
+      <input type="hidden" id="editId" />
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Menu *</label>
+        <input id="fName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Path / URL</label>
+        <input id="fPath" type="text" placeholder="/contoh/path" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+        <input id="fIcon" type="text" placeholder="dashboard, users, settings..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Parent Menu</label>
+        <select id="fParent" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">— Root (tidak ada parent) —</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
+        <input id="fOrder" type="number" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('modal')" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Batal</button>
+        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  if (!requireAuth()) throw '';
+  const emp = getEmployee(); const role = getActiveRole();
+  document.getElementById('sidebarName').textContent = emp.name || '';
+  document.getElementById('sidebarRole').textContent = role.name || '';
+  document.getElementById('sidebarAvatar').textContent = (emp.name || '?')[0].toUpperCase();
+  renderSidebar('/master/menu');
+
+  let allMenus = [], isTreeView = false;
+
+  async function load() {
+    const res = await api.get('/menus');
+    if (res?.ok) { allMenus = res.data.data; renderTable(); renderTree(); }
+  }
+
+  function getParentName(parentId) {
+    return allMenus.find(m => m.id === parentId)?.name || '—';
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!allMenus.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>'; return; }
+    tbody.innerHTML = allMenus.map(m => `
+      <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+        <td class="px-5 py-3 font-medium text-gray-800">${m.name}</td>
+        <td class="px-5 py-3 text-gray-500 font-mono text-xs">${m.path || '—'}</td>
+        <td class="px-5 py-3 text-gray-600">${m.parentId ? getParentName(m.parentId) : '<span class="text-gray-400">Root</span>'}</td>
+        <td class="px-5 py-3 text-gray-600">${m.order}</td>
+        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${m.isActive ? 'Aktif' : 'Nonaktif'}</span></td>
+        <td class="px-5 py-3 text-right">
+          <button onclick="openEdit('${m.id}')" class="text-xs text-gray-600 hover:text-blue-600 mr-3">Edit</button>
+          <button onclick="deleteMenu('${m.id}')" class="text-xs text-red-500 hover:text-red-700">Hapus</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function renderTree() {
+    const el = document.getElementById('treeContent');
+    function buildTree(items, parentId = null, level = 0) {
+      const children = items.filter(m => m.parentId === parentId).sort((a,b) => a.order - b.order);
+      if (!children.length) return '';
+      return children.map(m => `
+        <div style="padding-left:${level*20}px">
+          <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 group">
+            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${items.some(x => x.parentId === m.id) ? 'M3 7h18M3 12h18M3 17h18' : 'M9 5l7 7-7 7'}"/>
+            </svg>
+            <span class="text-sm font-medium text-gray-700">${m.name}</span>
+            ${m.path ? `<span class="text-xs text-gray-400 font-mono">${m.path}</span>` : ''}
+            <div class="ml-auto hidden group-hover:flex gap-2">
+              <button onclick="openEdit('${m.id}')" class="text-xs text-blue-600 hover:underline">Edit</button>
+              <button onclick="deleteMenu('${m.id}')" class="text-xs text-red-500 hover:underline">Hapus</button>
+            </div>
+          </div>
+          ${buildTree(items, m.id, level + 1)}
+        </div>`).join('');
+    }
+    el.innerHTML = buildTree(allMenus) || '<p class="text-gray-400 text-sm">Tidak ada menu</p>';
+  }
+
+  function toggleView() {
+    isTreeView = !isTreeView;
+    document.getElementById('tableView').classList.toggle('hidden', isTreeView);
+    document.getElementById('treeView').classList.toggle('hidden', !isTreeView);
+    document.getElementById('viewBtn').textContent = isTreeView ? '📋 Table View' : '🌳 Tree View';
+  }
+
+  function populateParentSelect(excludeId = null) {
+    const sel = document.getElementById('fParent');
+    sel.innerHTML = '<option value="">— Root (tidak ada parent) —</option>';
+    allMenus.filter(m => m.id !== excludeId).forEach(m => {
+      sel.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+    });
+  }
+
+  function openCreate() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').textContent = 'Tambah Menu';
+    ['fName','fPath','fIcon'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fOrder').value = '0';
+    populateParentSelect();
+    showModal('modal');
+  }
+
+  function openEdit(id) {
+    const m = allMenus.find(x => x.id === id); if (!m) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('modalTitle').textContent = 'Edit Menu';
+    document.getElementById('fName').value = m.name;
+    document.getElementById('fPath').value = m.path || '';
+    document.getElementById('fIcon').value = m.icon || '';
+    document.getElementById('fOrder').value = m.order;
+    populateParentSelect(id);
+    document.getElementById('fParent').value = m.parentId || '';
+    showModal('modal');
+  }
+
+  document.getElementById('modalForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const body = {
+      name: document.getElementById('fName').value.trim(),
+      path: document.getElementById('fPath').value.trim() || null,
+      icon: document.getElementById('fIcon').value.trim() || null,
+      parentId: document.getElementById('fParent').value || null,
+      order: parseInt(document.getElementById('fOrder').value) || 0,
+    };
+    if (!body.name) return toast('Nama menu wajib diisi', 'error');
+    const res = id ? await api.put(`/menus/${id}`, body) : await api.post('/menus', body);
+    if (res?.ok) { toast(id ? 'Menu diupdate' : 'Menu ditambahkan'); closeModal('modal'); load(); }
+    else toast(res?.data?.message || 'Gagal menyimpan', 'error');
+  };
+
+  async function deleteMenu(id) {
+    if (!await confirm('Hapus menu ini? Sub-menu juga akan terpengaruh.')) return;
+    const res = await api.delete(`/menus/${id}`);
+    if (res?.ok) { toast('Menu dihapus'); load(); }
+    else toast(res?.data?.message || 'Gagal menghapus', 'error');
+  }
+
+  load();
+</script>
+</body>
+</html>
