@@ -126,19 +126,32 @@
 
   function renderTable() {
     const tbody = document.getElementById('tableBody');
-    if (!allMenus.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>'; return; }
-    tbody.innerHTML = allMenus.map(m => `
-      <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+    if (!allMenus.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>';
+      return;
+    }
+    tbody.innerHTML = allMenus.map(m => {
+      const parentName = m.parentId ? (getParentName(m.parentId) || '—') : '<span class="text-gray-400">Root</span>';
+      const statusClass = m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+      const statusText  = m.isActive ? 'Aktif' : 'Nonaktif';
+      return `<tr class="border-b border-gray-100 hover:bg-gray-50 transition">
         <td class="px-5 py-3 font-medium text-gray-800">${m.name}</td>
         <td class="px-5 py-3 text-gray-500 font-mono text-xs">${m.path || '—'}</td>
-        <td class="px-5 py-3 text-gray-600">${m.parentId ? getParentName(m.parentId) : '<span class="text-gray-400">Root</span>'}</td>
+        <td class="px-5 py-3 text-gray-600">${parentName}</td>
         <td class="px-5 py-3 text-gray-600">${m.order}</td>
-        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${m.isActive ? 'Aktif' : 'Nonaktif'}</span></td>
+        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}">${statusText}</span></td>
         <td class="px-5 py-3 text-right">
-          <button onclick="openEdit('${m.id}')" class="text-xs text-gray-600 hover:text-blue-600 mr-3">Edit</button>
-          <button onclick="deleteMenu('${m.id}')" class="text-xs text-red-500 hover:text-red-700">Hapus</button>
+          <button data-edit="${m.id}" class="text-xs text-gray-600 hover:text-blue-600 mr-3">Edit</button>
+          <button data-del="${m.id}" class="text-xs text-red-500 hover:text-red-700">Hapus</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
+
+    // Attach events after render
+    tbody.querySelectorAll('[data-edit]').forEach(btn =>
+      btn.addEventListener('click', () => openEdit(btn.dataset.edit)));
+    tbody.querySelectorAll('[data-del]').forEach(btn =>
+      btn.addEventListener('click', () => deleteMenu(btn.dataset.del)));
   }
 
   function renderTree() {

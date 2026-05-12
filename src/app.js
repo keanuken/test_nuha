@@ -25,7 +25,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(require('path').join(__dirname, '..', 'public')));
 
 // Swagger UI — fetch spec dari /api-docs.json (dynamic, ikut PUBLIC_URL)
 app.use('/api-docs', swaggerUi.serve);
@@ -61,7 +61,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' }));
 
 // SPA fallback — semua non-API route ke index.html
-app.use((req, res) => res.sendFile('index.html', { root: 'public' }));
+app.use((req, res) => res.sendFile('index.html', { root: require('path').join(__dirname, '..', 'public') }));
 
 // Error handler
 app.use(errorHandler);

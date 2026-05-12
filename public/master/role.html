@@ -105,18 +105,26 @@
 
   function renderTable(data) {
     const tbody = document.getElementById('tableBody');
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>'; return; }
-    tbody.innerHTML = data.map(r => `
-      <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400">Tidak ada data</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => {
+      const statusClass = r.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+      return `<tr class="border-b border-gray-100 hover:bg-gray-50 transition">
         <td class="px-5 py-3 font-medium text-gray-800">${r.name}</td>
         <td class="px-5 py-3 text-gray-600">${r.description || '—'}</td>
-        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${r.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${r.isActive ? 'Aktif' : 'Nonaktif'}</span></td>
+        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}">${r.isActive ? 'Aktif' : 'Nonaktif'}</span></td>
         <td class="px-5 py-3 text-right">
-          <button onclick="openMenus('${r.id}','${r.name}')" class="text-xs text-purple-600 hover:underline mr-3">Assign Menu</button>
-          <button onclick="openEdit('${r.id}')" class="text-xs text-gray-600 hover:text-blue-600 mr-3">Edit</button>
-          <button onclick="deleteRole('${r.id}')" class="text-xs text-red-500 hover:text-red-700">Hapus</button>
+          <button data-menus="${r.id}" data-name="${r.name}" class="text-xs text-purple-600 hover:underline mr-3">Assign Menu</button>
+          <button data-edit="${r.id}" class="text-xs text-gray-600 hover:text-blue-600 mr-3">Edit</button>
+          <button data-del="${r.id}" class="text-xs text-red-500 hover:text-red-700">Hapus</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.edit)));
+    tbody.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => deleteRole(btn.dataset.del)));
+    tbody.querySelectorAll('[data-menus]').forEach(btn => btn.addEventListener('click', () => openMenus(btn.dataset.menus, btn.dataset.name)));
   }
 
   function openCreate() {
