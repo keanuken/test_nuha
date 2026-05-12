@@ -36,7 +36,9 @@ services:
     ports:
       - "3000:3000"
     command: >
-      sh -c "npx prisma migrate deploy && node prisma/seed.js && node src/server.js"
+      sh -c "npx prisma migrate deploy &&
+             ([ -f /app/.seeded ] || (node prisma/seed.js && touch /app/.seeded)) &&
+             node src/server.js"
 
 volumes:
   postgres_data:
