@@ -1,0 +1,83 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String
+  email     String?  @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  roles EmployeeRole[]
+
+  @@map("employees")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  employees EmployeeRole[]
+  menus     RoleMenu[]
+
+  @@map("roles")
+}
+
+model EmployeeRole {
+  id         String   @id @default(uuid())
+  employeeId String   @map("employee_id")
+  roleId     String   @map("role_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, roleId])
+  @@map("employee_roles")
+}
+
+model Menu {
+  id       String  @id @default(uuid())
+  name     String
+  icon     String?
+  path     String?
+  parentId String? @map("parent_id")
+  order    Int     @default(0)
+  isActive Boolean @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parent   Menu?  @relation("MenuChildren", fields: [parentId], references: [id])
+  children Menu[] @relation("MenuChildren")
+  roles    RoleMenu[]
+
+  @@map("menus")
+}
+
+model RoleMenu {
+  id        String   @id @default(uuid())
+  roleId    String   @map("role_id")
+  menuId    String   @map("menu_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, menuId])
+  @@map("role_menus")
+}
